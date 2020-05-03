@@ -1,0 +1,224 @@
+---
+title: "Speed Dating"
+date: "`r format(Sys.time(), '%X %d %B, %Y')`"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font face="calibri">
+
+The purpose of the project is to analyze and identify the influential attributes in determining to meet someone again romantically after a speed dating event. In simple terms, "What influences love at first sight?" (Or , at least, love at the first four minutes?)
+</font>
+
+<font face="calibri" size ='4'>
+<b>Speed Dating Experiment:</b><br></font>
+<font face="calibri">
+
+The dataset used for this experiment is gathered by Columbia Business school Professors Ray Fisman and Sheena Iyengar for their paper Gender Differences in Mate Selection: Evidence from a speed dating experiment.
+The dates lasted four minutes and a survey form is filled out to capture required personal information and dating experience.<br>
+The participants are required to rate the importance of the following attributes in a potential data on a scale of 1-10((1=not at all important, 10=extremely important). 
+Attractiveness, Sincerity, Intelligence, Fun, Ambitious, Shared interests/hobbies.
+The Questionnaire data is gathered at a different point in time during the experiment. Firstly at the time of Sign up,then the day after participating in the event, finally 3-4 weeks after they had been sent their matches.
+</font>
+<br>
+
+<font face="calibri" size ='4'>
+<b>Dataset & Variable Selection:</b><br></font>
+<font face="calibri">
+
+Each date will have 2 participants. p1 -participant 1, p2 participant2. There are 8378 observations and 195 variables in summary. Below are the key variables taken for study in this project.<br>
+<table>
+<tr>
+	<td><b>attr :</b> how attractive p1 thinks p2 is<br></td>
+	<td><b>sinc :</b> how sincere p1 thinks p2 is<br></td>
+	</tr><tr>
+	<td><b>intel :</b> how smart p1 thinks p2 is<br></td>
+	<td><b>fun :</b> how fun p1 thinks p2 is<br></td>
+	</tr><tr>
+ 	<td><b>amb :</b> how ambitious p1 thinks p2 is<br></td>
+	<td><b>shar :</b> how much p1 believes they both (p1 and p2) share the same interests and hobbies<br></td>
+ 	</tr>><tr>
+ 	<td><b>dec :</b> whether p1 wants to meet p2 again given how the speed date went.<br></td>
+ 	<td><b>gender :</b> gender of p1, 0 = woman<br></td>
+ 	</tr></table>
+</font>
+
+<font face="calibri" size ='4'>
+<b>Data Slicing and Cleaning:</b><br></font>
+<font face="calibri">
+
+A subset of data with six influential attributes as predictor variables and  decision attribute as a response variable is created from the main dataset. It is observed that some of the attribute values are NA and so rows having NA's are omitted.
+
+```{r echo=FALSE ,warning=FALSE}
+suppressMessages(library(ggplot2))
+suppressMessages(library(GGally))
+suppressMessages(library(ggplot2))
+suppressMessages(library(tidyverse))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(tidyr))
+suppressMessages(library(tidyselect))
+suppressMessages(library(broom))
+suppressMessages(library(randomForest))
+
+speed_dating <- read.csv("Speed Dating Data.csv")
+```
+
+```{r}
+
+req_columns_s <- c("dec", "attr", "sinc", "intel", "fun", "amb", "shar")
+req_speed_dating_s <- speed_dating[,req_columns_s]
+req_speed_dating_s <- na.omit(req_speed_dating_s)
+req_speed_dating_s$dec <- as.factor(req_speed_dating_s$dec)
+```
+
+</font>
+
+<font face="calibri" size ='4'>
+<b>Collinearity Test:</b><br></font>
+<font face="calibri">
+In this section, Ggpairs plot is plotted to check the relationship and existence of multicollinearity among the predictor variables.<br> 
+```{r, fig.height = 3.8, fig.width = 6}
+ggpairs(req_speed_dating_s,columns=2:7,aes(col=dec))
+```
+
+From the above plot there are no strong correlations among predictors is observed. Intelligence and sincerity has slightly high correlation ratio of around 66% but still not too high. Hence no action necessary to remove collinearity.
+
+</font>
+<font face="calibri" size ='4'>
+<b>Overview of Data:</b><br></font>
+<font face="calibri">
+```{r, fig.height = 2.8, fig.width = 5}
+
+## SDD<-read.csv("speed_dating_data.csv")
+SDD_attributes<-speed_dating %>% select(attr1_1,sinc1_1,intel1_1,fun1_1,amb1_1,shar1_1,
+                               attr7_2,sinc7_2,intel7_2,fun7_2,amb7_2,shar7_2,
+                               attr7_3,sinc7_3,intel7_3,fun7_3,amb7_3,shar7_3)
+
+SDD_attributes<-na.omit(SDD_attributes)
+sum_data<-data.frame(value=apply(SDD_attributes,2,sum))
+
+data <- matrix(sum_data$value,nrow=3) 
+
+colnames(data) <- c('Attractiveness','Sincerity','Intelligence','Fun','Ambition','Shared Interest')
+
+rownames(data) <- factor(c("Before Event","Just After Event","After 2 Months"))
+
+percent_data<-data.frame(apply(data, 1, function(x){x*100/sum(x,na.rm=T)}))
+
+percent_data$attribute<-factor(rownames(percent_data))
+
+percent_data<-gather(percent_data,Before.Event,Just.After.Event,After.2.Months,key=event,value=percent)
+
+percent_data$event<-factor(percent_data$event,levels = c("Before.Event", "Just.After.Event", "After.2.Months"))
+
+ggplot(percent_data,mapping = aes(x=event,y=percent,fill=attribute))+
+  geom_col()+
+  scale_fill_manual("legend", values = brewer.pal(n = 6, name = "Dark2"))
+```
+<br>The above graph indicates how participants perceived the 6 attributes at different timelines of the Dating event. From the graph we can see that there was a clear decrease in the importance of Intelligence. The participants gave a lower importance to Attractiveness before the event, compared to the later stages. As seen from the graph, after 2 months, the importance of Ambition reduced from the earlier phases.Overall, Attractiveness, Intelligence and Ambition dominated among all the factors that are perceived while going on a date
+
+</font>
+
+<font face="calibri" size ='4'>
+<b>Analysis:</b><br></font>
+<font face="calibri">
+As the problem Question is to select the best attribute has influence over  decision making of the speed dating event, ML feature selection methods are referred. We have tried forward selection and stepwise regression. But the AIC scores are relatively close to each other and so we decided to analyse the give dataset with Logistic regression and Random Forest algorithms. 
+</font>
+
+<font face="calibri" size ='4'>
+<b>Logistic Regression:</b><br></font>
+<font face="calibri">
+
+Here, the dataset is partioned into training dataset with 50% of the dataset and testing dataset with the rest of the data for the purpose of cross validation. The data in the training and testing dataset are randomly selected.
+```{r}
+set.seed(1) 
+s <- sample(nrow(req_speed_dating_s), round(.5*nrow(req_speed_dating_s)))
+train_req_speed_dating_s <- req_speed_dating_s[s,]
+test_req_speed_dating_s <- req_speed_dating_s[-s,]
+```
+
+Now a logistic regression model is created using the training dataset.
+```{r}
+log_reg_model_s <- glm(dec ~ ., data = train_req_speed_dating_s, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_s)$coefficients
+```
+From the model(full model) fit we can see that attr, fun, amb and shar is very significant parameters for making a decision followed by sinc whereas intel is not significant at all.<br>
+From the model fit we can see that sinc and amb has negative impact on our response i.e dec whereas attr,fun and shar are having positive impact on dec.<br>
+
+The most influencing predictor can be identified by calculating the confidence interval. The calculated confidence intervals for all the predictors are visulaized below.<br> 
+```{r,fig.height = 2.8, fig.width = 4}
+broom::tidy(log_reg_model_s,conf.int = TRUE,conf.level = 0.95) %>%
+  filter(term != "(Intercept)") %>%
+  ggplot(aes(term, estimate,ymin = conf.low,ymax = conf.high)) +
+  geom_errorbar(size = 0.8, width= 0.4) +
+  geom_point(color = "red", size = 2) +
+  geom_hline(yintercept = 0, colour = "darkred") +
+  labs(x = "Predictor variable",title = "Logistic regression terms",y = expression(paste("estimated ", 'b'," (95% confidence)")))
+```
+
+From the above plot, we can clearly say that the predictor attr is having the highest positive confidence interval than other predictors.
+</font>
+
+<font face="calibri" size ='4'>
+<b>Model Predictions Using Logistic Regression:</b><br></font>
+<font face="calibri">
+Using the logistic regression model which was created in the previous section, it is possible to predict a match between two individals with these six predictor variable values.
+
+<b>Prediction with Training Dataset:</b>
+```{r}
+pred_s <- predict(log_reg_model_s, train_req_speed_dating_s, type="response")
+train_bin_preds_s <- as.numeric(pred_s >= 0.5)
+train_accuracy_s <- mean(train_bin_preds_s == train_req_speed_dating_s["dec"])
+train_accuracy_s
+```
+
+<b>Prediction with Test Dataset:</b>
+```{r, fig.height = 2.8, fig.width = 4}
+test_preds_s <- predict(log_reg_model_s, test_req_speed_dating_s, type="response")
+test_bin_preds_s <- as.numeric(test_preds_s >= 0.5)
+test_accuracy_s <- mean(test_bin_preds_s==test_req_speed_dating_s["dec"])
+test_accuracy_s
+```
+This Logistic regression model achieved a 74.88% and 74.80% with training and test dataset respectively.
+</font>
+
+
+<font face="calibri" size ='4'>
+<b>Random Forest:</b><br></font>
+<font face="calibri">
+Random Forest with built in option in feature selection produces a clear output which is plotted using ggplot as below.
+```{r,fig.height = 4, fig.width = 6}
+fit <- randomForest(dec ~ attr+sinc+intel+fun+amb+shar,
+          data = req_speed_dating_s,importance=TRUE,ntree=600)
+
+importance.features <- tibble::rownames_to_column(data.frame(fit$importance[,c(1)]))
+colnames(importance.features) <- c("rowname", "value")
+
+ggplot(importance.features, aes(x = reorder(rowname, -value), y = value)) +
+  geom_bar(stat = "identity", position = "dodge", fill="#E69F00", colour="black") +
+  xlab("Feature") + ylab("Count") + ggtitle("Importance of a feature: Simple Random Forest classifier") +
+  coord_flip()
+```
+<br>From the above graph, it is observed that the predictor attraction followed by fun are having the most influence over the response variable and the predictors Intelligence is having least influence than other variables.
+
+</font>
+
+<font face="calibri" size ='4'>
+<b>Conclusion:</b><br></font>
+<font face="calibri">
+Contradicting the famous saying “No beauty shines brighter than that of a good heart”, Attractiveness drove participants’ decision to select / reject their partner the most. Both Logistics and Random Forest showed us that Attractiveness was the most influential factor, whereas Intelligence and Sincerity were rated the lowest. From the initial Perception graph, which was taken during 3 timelines, Intelligence was in the top 3, but when it comes to making actual decision for selecting a partner, Intelligence was the least important.
+</font>
+
+<font face="calibri" size ='4'>
+<b>References :</b><br></font>
+<font face="calibri">
+RAYMOND, FISMAN. SHEENA, S. IYENGAR.,EMIR, KAMENICA.,ITAMAR. SIMONSON.(2008) "Racial Preferences in Dating", <i>Review of Economic Studies (2008) 75, 117–132 </i><br>
+COLIN. LEVERGER.(2016) "Exploring Speed Dating", <i><u>https://colinleverger.github.io/speed-dating-experiment-r/</i></u><br>
+ANNA. MONTOYA.(2016) "Speed Dating Experiment", <i><u>https://data.world/annavmontoya/speed-dating-experiment</i></u>
+
+</font>

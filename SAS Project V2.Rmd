@@ -1,0 +1,142 @@
+---
+title: "SAS Project"
+date: "`r format(Sys.time(), '%X %d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## cleaning of dataset
+
+```{r}
+speed_dating <- read.csv("Speed Dating Data.csv")
+head(speed_dating)
+
+req_columns_p <- c("dec_o", "attr1_1", "sinc1_1", "intel1_1", "fun1_1", "amb1_1", "shar1_1" ,"imprace" , "imprelig")
+
+req_columns_s <- c("dec", "attr", "sinc", "intel", "fun", "amb", "shar" ,"like")
+
+req_speed_dating_p <- speed_dating[,req_columns_p]
+req_speed_dating_s <- speed_dating[,req_columns_s]
+
+head(req_speed_dating_p)
+head(req_speed_dating_s)
+
+# to check for the NAs in the dataset  
+sum(is.na(req_speed_dating_p))
+sum(is.na(req_speed_dating_s))
+
+# to remove all the rows if any column has NA in it.  
+req_speed_dating_p <- na.omit(req_speed_dating_p)
+req_speed_dating_s <- na.omit(req_speed_dating_s)
+
+req_speed_dating_s$dec <- as.factor(req_speed_dating_s$dec)
+req_speed_dating_p$dec_o <- as.factor(req_speed_dating_p$dec_o)
+
+```
+
+
+## dividing the dataset into training and test set for subject
+
+```{r}
+set.seed(1) 
+s <- sample(nrow(req_speed_dating_s), round(.5*nrow(req_speed_dating_s)))
+train_req_speed_dating_s <- req_speed_dating_s[s,]
+test_req_speed_dating_s <- req_speed_dating_s[-s,]
+```
+
+
+## creating a model using training dataset
+
+```{r}
+log_reg_model_s <- glm(dec ~ ., data = train_req_speed_dating_s, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_s)
+
+```
+
+
+
+## testing the model with our traing dataset
+
+```{r}
+pred_s <- predict(log_reg_model_s, train_req_speed_dating_s, type="response")
+train_bin_preds_s <- as.numeric(pred_s >= 0.5)
+train_accuracy_s <- mean(train_bin_preds_s != train_req_speed_dating_s["dec"])
+train_accuracy_s
+table(train_bin_preds_s, train_req_speed_dating_s$dec)
+```
+
+
+
+
+## testing the model with our testing dataset
+
+```{r}
+test_preds_s <- predict(log_reg_model_s, test_req_speed_dating_s, type="response")
+test_bin_preds_s <- as.numeric(test_preds_s >= 0.5)
+test_accuracy_s <- mean(test_bin_preds_s==test_req_speed_dating_s["dec"])
+test_accuracy_s
+table(test_bin_preds_s, test_req_speed_dating_s$dec)
+
+pred <- predict(log_reg_model_s,test_req_speed_dating_s)$class
+table(test_req_speed_dating_s$dec, pred)
+mean(test_req_speed_dating_s$dec != pred)
+
+```
+
+
+
+
+## dividing the dataset into training and test set for participants
+
+```{r}
+set.seed(1) 
+p <- sample(nrow(req_speed_dating_p), round(.5*nrow(req_speed_dating_p)))
+train_req_speed_dating_p <- req_speed_dating_p[p,]
+test_req_speed_dating_p <- req_speed_dating_p[-p,]
+```
+
+
+## creating a model using training dataset
+
+```{r}
+log_reg_model_p <- glm(dec_o ~ ., data = train_req_speed_dating_p, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_p)
+
+```
+
+
+
+## testing the model with our traing dataset
+
+```{r}
+pred_p <- predict(log_reg_model_p, train_req_speed_dating_p, type="response")
+train_bin_preds_p <- as.numeric(pred_p >= 0.5)
+train_accuracy_p <- mean(train_bin_preds_p != train_req_speed_dating_p["dec_o"])
+train_accuracy_p
+table(train_bin_preds_p, train_req_speed_dating_p$dec_o)
+```
+
+
+## testing the model with our testing dataset
+
+```{r}
+test_preds_p <- predict(log_reg_model_p, test_req_speed_dating_p, type="response")
+test_bin_preds_p <- as.numeric(test_preds_p >= 0.5)
+test_accuracy_p <- mean(test_bin_preds_p==test_req_speed_dating_p["dec_o"])
+test_accuracy_p
+table(test_bin_preds_p, test_req_speed_dating_p$dec_o)
+```
+
+
+## forward and backward regression and stepwise
+
+```{r}
+step(glm(dec_o~.,data= req_speed_dating_p, family = binomial("logit"),maxit = 100),direction="backward")
+
+
+step(glm(dec~.,data= req_speed_dating_s, family = binomial("logit"),maxit = 100),direction="backward")
+```
+

@@ -1,0 +1,110 @@
+---
+title: "SAS Project"
+author: "Group 7"
+date: "`r format(Sys.time(), '%X %d %B, %Y')`"
+output:
+  html_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## cleaning of dataset
+
+```{r}
+speed_dating <- read.csv("Speed Dating Data.csv")
+
+req_columns_s <- c("dec", "attr", "sinc", "intel", "fun", "amb", "shar")
+
+req_speed_dating_s <- speed_dating[,req_columns_s]
+
+# to check for the NAs in the dataset  
+sum(is.na(req_speed_dating_s))
+
+# to remove all the rows if any column has NA in it.  
+req_speed_dating_s <- na.omit(req_speed_dating_s)
+
+pairs(req_speed_dating_s)
+cor(req_speed_dating_s)
+
+req_speed_dating_s$dec <- as.factor(req_speed_dating_s$dec)
+```
+
+
+From the plot and corelation matrix we can see that there is no high coreation between any parameters as from the matrix we can see that the maximum correlation is between sinc and intel which is 66%.
+
+## dividing the dataset into training and test set for subject
+
+```{r}
+set.seed(1) 
+s <- sample(nrow(req_speed_dating_s), round(.5*nrow(req_speed_dating_s)))
+train_req_speed_dating_s <- req_speed_dating_s[s,]
+test_req_speed_dating_s <- req_speed_dating_s[-s,]
+```
+
+
+## creating a model using training dataset
+
+```{r}
+log_reg_model_s <- glm(dec ~ ., data = train_req_speed_dating_s, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_s)
+```
+
+
+
+From the model(full model) fit we can see that attr, fun, amb and shar is very significant parameters for making a decision followed by sinc whereas intel is not significant at all.
+From the model fit we can see that sinc and amb has negative impact on our response i.e dec whereas attr,fun and shar are having positive impact on dec.
+
+
+## finding the parameters for the best model.
+
+```{r}
+step(glm(dec~.,data=train_req_speed_dating_s, family = binomial("logit"),maxit = 100),direction="both")
+
+log_reg_model_s1 <- glm(dec ~ attr + sinc + fun + amb + shar, data = train_req_speed_dating_s, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_s1)
+```
+
+
+## testing the model with our traing dataset
+
+```{r}
+pred_s <- predict(log_reg_model_s1, train_req_speed_dating_s, type="response")
+train_bin_preds_s <- as.numeric(pred_s >= 0.5)
+train_accuracy_s <- mean(train_bin_preds_s == train_req_speed_dating_s["dec"])
+train_accuracy_s
+```
+
+
+After removing intel parameter the accuracy our model with training dataset is 74.85%.
+
+## testing the model with our testing dataset
+
+```{r}
+test_preds_s <- predict(log_reg_model_s1, test_req_speed_dating_s, type="response")
+test_bin_preds_s <- as.numeric(test_preds_s >= 0.5)
+test_accuracy_s <- mean(test_bin_preds_s==test_req_speed_dating_s["dec"])
+test_accuracy_s
+```
+
+
+After removing intel parameter the accuracy our model with training dataset is 74.80% maybe we need large dataset for better accuracy of the model.
+
+
+## side analysis:- adding like, prob and met pridictors into our model and finding out which parameters among all is significant.
+
+```{r}
+column <- c("dec", "attr", "sinc", "intel", "fun", "amb", "shar", "like", "prob", "met")
+req_speed_dating_s1 <- speed_dating[,column]
+
+req_speed_dating_s1 <- na.omit(req_speed_dating_s1)
+
+req_speed_dating_s1$dec <- as.factor(req_speed_dating_s1$dec)
+
+log_reg_model_s2 <- glm(dec ~ ., data = req_speed_dating_s1, family = binomial("logit"),maxit = 100)
+summary(log_reg_model_s2)
+```
+
+
+Here we can see that after adding like, prob and met pridictors to the previous model like and prob is also significant parameters in deciding for dating.
+From the p values of parameters, like and attr are the most significant parameters with positive impact on our response we need to do further analysis to find out among these two which one is the most important factor(like random forest or checking the confidence interval).

@@ -1,0 +1,96 @@
+---
+title: "SAS Project"
+author: "Group 7"
+date: "`r format(Sys.time(), '%X %d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+editor_options:
+  chunk_output_type: console
+---
+
+## cleaning of dataset
+
+```{r}
+speed_dating <- read.csv("Speed Dating Data.csv")
+head(speed_dating)
+req_columns <- c("attr7_2","sinc7_2","intel7_2","fun7_2","amb7_2","shar7_2","dec_o","match","gender")
+
+req_speed_dating <- speed_dating[,req_columns]
+
+head(req_speed_dating)
+# to check for the NAs in the dataset  
+sum(is.na(req_speed_dating))
+# to remove all the rows if any column has NA in it.  
+req_speed_dating <- na.omit(req_speed_dating)
+
+```
+
+
+## to check how many actually get there match
+
+
+```{r}
+sum(req_speed_dating$match == 1) / nrow(req_speed_dating)
+req_speed_dating$match <- as.factor(req_speed_dating$match)
+```
+
+
+0.1643685 of the total dataset is having there match again.   
+
+
+## dividing the datset into training and test set
+
+```{r}
+set.seed(1) 
+s <- sample(nrow(req_speed_dating), round(.5*nrow(req_speed_dating)))
+train_req_speed_dating <- req_speed_dating[s,]
+test_req_speed_dating <- req_speed_dating[-s,]
+```
+
+
+## creating a model using training dataset
+
+```{r}
+log_reg_model <- glm(match~., data = train_req_speed_dating, family = binomial)
+summary(log_reg_model)
+
+pairs(train_req_speed_dating)
+```
+
+
+## testing the model with our traing dataset
+
+```{r}
+pred1 <- predict(log_reg_model, train_req_speed_dating, type="response")
+train_bin_preds <- as.numeric(pred1 >= 0.5)
+train_accuracy <- mean(train_bin_preds != train_req_speed_dating["match"])
+train_accuracy
+table(train_bin_preds, train_req_speed_dating$match)
+```
+
+
+
+## this just to make this file interactive so that user can decide which parameters they want to select in the various columns in the dataset, as of now not part of the project.
+
+```{r}
+alok<- menu(colnames(req_speed_dating),graphics = TRUE, title="Do you want this?")
+alok
+colnames(req_speed_dating)
+
+select.list(colnames(speed_dating), preselect = NULL, multiple = TRUE,title = "Do you want this?", graphics = getOption("menu.graphics"))
+
+readtext("speed Dating Key.doc")
+
+
+```
+
+
+```{r}
+library(tm)
+readDOC()
+getwd()
+??readdoc
+```
+
+
