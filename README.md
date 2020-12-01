@@ -1,13 +1,13 @@
 # Speed-Dating-Project
 
 
-#Objective
+# Objective
 
 The purpose of the project is to analyze and identify the influential attributes in determining to meet someone again romantically after a speed dating event. 
 In simple terms, "What influences love at first sight?" (Or , at least, love at the first four minutes?)
 
 
-#Speed Dating Experiment:
+# Speed Dating Experiment:
 
 The dataset used for this experiment is gathered by Columbia Business school Professors Ray Fisman and Sheena Iyengar for their paper Gender Differences in Mate Selection: 
 Evidence from a speed dating experiment.
@@ -18,7 +18,7 @@ The Questionnaire data is gathered at a different point in time during the exper
 Firstly at the time of Sign up,then the day after participating in the event, finally 3-4 weeks after they had been sent their matches.
 
 
-#Dataset & Variable Selection:
+# Dataset & Variable Selection:
 
 Each date will have 2 participants. p1 -participant 1, p2 participant2. 
 There are 8378 observations and 195 variables in summary. 
@@ -32,4 +32,6 @@ amb : how ambitious p1 thinks p2 is
 shar : how much p1 believes they both (p1 and p2) share the same interests and hobbies
 dec : whether p1 wants to meet p2 again given how the speed date went.
 gender : gender of p1, 0 = woman
+
+
  	
