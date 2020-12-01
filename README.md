@@ -25,13 +25,21 @@ There are 8378 observations and 195 variables in summary.
 Below are the key variables taken for study in this project.
 
 attr : how attractive p1 thinks p2 is
+
 sinc : how sincere p1 thinks p2 is
+
 intel : how smart p1 thinks p2 is
+
 fun : how fun p1 thinks p2 is
+
 amb : how ambitious p1 thinks p2 is
+
 shar : how much p1 believes they both (p1 and p2) share the same interests and hobbies
+
 dec : whether p1 wants to meet p2 again given how the speed date went.
+
 gender : gender of p1, 0 = woman
+
 
 
  	
